@@ -3,15 +3,24 @@ package com.webflux_toy.controllers;
 import com.webflux_toy.dto.FileUploadRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @RestController
@@ -72,5 +81,26 @@ public class TestController {
             return Mono.just(ResponseEntity.status(500)
                     .body("파일 업로드 실패: " + e.getMessage()));
         });
+    }
+
+    /**
+     * SSE(Server-Sent Events) 예제 메서드
+     * 1초 간격으로 5개의 이벤트를 클라이언트에게 스트리밍합니다.
+     */
+    @GetMapping(value = "/sse/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> streamEvents() {
+        System.out.println("SSE 요청 수신 - Thread: " + Thread.currentThread().getName());
+
+        return Flux.interval(Duration.ofSeconds(1))  // 1초 간격으로 0, 1, 2, ... 방출
+                .take(5)  // 5개까지만 방출
+                .map(sequence -> {
+                    String timestamp = LocalDateTime.now()
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    System.out.println("이벤트 방출 #" + sequence + " - Thread: " + Thread.currentThread().getName());
+                    return String.format("이벤트 #%d - 시간: %s", sequence, timestamp);
+                })
+                .doOnSubscribe(subscription -> System.out.println("클라이언트 구독 시작"))
+                .doOnComplete(() -> System.out.println("스트림 완료"))
+                .doOnCancel(() -> System.out.println("클라이언트 연결 종료"));
     }
 }
