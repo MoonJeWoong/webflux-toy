@@ -1,3 +1,13 @@
 spring:
   application:
     name: webflux-toy
+
+logging:
+  level:
+    root: INFO
+
+llm:
+  gpt:
+    key: '발급받은 GPT API key'
+  gemini:
+    key: '발급받은 gemini API key'
